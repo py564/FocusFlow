@@ -59,6 +59,7 @@ FocusFlow provides:
 
 ## 📥 Download APK
 👉 https://github.com/py564/FocusFlow/releases/download/v1.0.0/app-release.apk
+👉 https://drive.google.com/file/d/1Qe7kHe3udw1efTZaPOLVGpmBJOREl0oz/view?usp=sharing
 
 ---
 
