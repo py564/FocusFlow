@@ -108,6 +108,7 @@ class StorageService {
   final Box<Habit> _habitBox = Hive.box<Habit>('habits');
 
   List<Habit> getHabits() {
+    resetDailyHabitsIfNeeded();
     return _habitBox.values.toList();
   }
 
@@ -126,23 +127,34 @@ class StorageService {
   }
 
   void toggleHabit(Habit habit) {
-    final today = DateTime.now();
-    final todayDate = DateTime(today.year, today.month, today.day);
-
-    // If toggling On
+    final now = DateTime.now();
+    final todayDate = DateTime(
+      now.year,
+      now.month,
+      now.day,
+    );
+    final yesterday = todayDate.subtract(const Duration(days: 1));
     if (!habit.isCompletedToday) {
-      // Prevent multiple streak increases in same day
-      if (habit.lastCompletedDate == null ||
-          !_isSameDay(habit.lastCompletedDate!, todayDate)) {
-        habit.streak++;
-        habit.lastCompletedDate = todayDate;
-      }
-      habit.isCompletedToday = true;
-    } else {
-      // Optional; allow untoggle (does not reduce streak)
-      habit.isCompletedToday = false;
-    }
-    habit.save();
+  if (habit.lastCompletedDate == null) {
+    // First completion ever
+    habit.streak = 1;
+  } else if (_isSameDay(habit.lastCompletedDate!, yesterday)) {
+    // Continued streak
+    habit.streak++;
+  } else if (!_isSameDay(habit.lastCompletedDate!, todayDate)) {
+    // Missed one or more days
+    habit.streak = 1;
+  }
+
+  habit.lastCompletedDate = todayDate;
+  habit.isCompletedToday = true;
+} else {
+  // Allow unchecking without destroying streak
+  habit.isCompletedToday = false;
+}
+
+habit.save();
+  
   }
 
   void resetDailyHabitsIfNeeded() {
@@ -151,9 +163,12 @@ class StorageService {
 
     for (final habit in _habitBox.values) {
       if (habit.lastCompletedDate == null ||
-          !_isSameDay(habit.lastCompletedDate!, todayDate)) {
-        habit.isCompletedToday = false;
-        habit.save();
+          // !_isSameDay(habit.lastCompletedDate!, todayDate)) {
+          habit.lastCompletedDate!.isBefore(todayDate)) {
+        if (habit.isCompletedToday) {
+          habit.isCompletedToday = false;
+          habit.save();
+        }
       }
     }
   }
