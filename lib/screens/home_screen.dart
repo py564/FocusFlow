@@ -201,7 +201,7 @@ class _HomeScreenState extends State<HomeScreen> {
                           ),
                         ),
                         const Text(
-                          "Version 1.0.0",
+                          "Version 2.0.0",
                           style: TextStyle(color: Colors.grey, fontSize: 14),
                         ),
             
