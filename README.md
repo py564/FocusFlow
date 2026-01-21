@@ -40,6 +40,9 @@ FocusFlow provides:
 - Uses **Hive** for fast local storage
 - Works completely offline
 
+### 📃 Target Time 
+- User can set target time and get notification
+
 ---
 
 ## 🛠 Tech Stack
@@ -59,18 +62,9 @@ FocusFlow provides:
 
 ## 📥 Download APK
 👉 https://github.com/py564/FocusFlow/releases/download/v1.0.0/app-release.apk
-👉 https://drive.google.com/file/d/1rT2cPM9P2Fj7U1DgZNiKe7kY7CxEe0Jk/view?usp=sharing
+
+------------------- Latest Version -------------
+You can see in the Releases section
 
 ---
 
-## 🚀 Getting Started
-
-### Prerequisites
-- Flutter SDK
-- Android Studio / VS Code
-- Android device or emulator
-
-### Run the app
-```bash
-flutter pub get
-flutter run

@@ -1,13 +1,13 @@
 // ignore_for_file: no_leading_underscores_for_local_identifiers
 
 import 'package:flutter/material.dart';
-import 'package:focus_flow/models/task.dart';
-import 'package:focus_flow/services/storage_service.dart';
-import 'package:focus_flow/widgets/task_tile.dart';
+import 'package:focusflow/models/task.dart';
+import 'package:focusflow/services/storage_service.dart';
+import 'package:focusflow/widgets/task_tile.dart';
 import 'add_screen.dart';
-import 'package:focus_flow/screens/habit_screen.dart';
+import 'package:focusflow/screens/habit_screen.dart';
 import 'progress_screen.dart';
-import 'package:focus_flow/models/habit.dart';
+import 'package:focusflow/models/habit.dart';
 import 'package:hive/hive.dart';
 
 class HomeScreen extends StatefulWidget {

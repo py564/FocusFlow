@@ -3,7 +3,7 @@ import 'package:hive/hive.dart';
 part 'task.g.dart';
 
 @HiveType(typeId: 1)
-class Task extends HiveObject{
+class Task extends HiveObject {
   @HiveField(0)
   String title;
 
@@ -19,37 +19,41 @@ class Task extends HiveObject{
   @HiveField(4)
   DateTime createdAt;
 
+  @HiveField(5)
+  int? targetMinutes; // Added for Version 2 Target Time feature
+
   Task({
     required this.title,
     this.isDone = false,
     this.time,
     this.completedAt,
+    this.targetMinutes,
     DateTime? createdAt,
   }) : createdAt = createdAt ?? DateTime.now();
 
-  Map<String, dynamic> toMap() => {
-    'title': title,
-    'isDone': isDone,
-    'time': time,
-    'completedAt': completedAt?.toIso8601String(),
-    'createdAt': createdAt.toIso8601String(),
-  };
+  // Used for StorageService migration and JSON handling
+  Map<String, dynamic> toJson() => {
+        'title': title,
+        'isDone': isDone,
+        'time': time,
+        'targetMinutes': targetMinutes,
+        'completedAt': completedAt?.toIso8601String(),
+        'createdAt': createdAt.toIso8601String(),
+      };
 
-  factory Task.fromMap(Map<String, dynamic> map) {
+  // Fixed factory to match the method name expected by StorageService
+  factory Task.fromJson(Map<String, dynamic> json) {
     return Task(
-      title: map['title'] as String? ?? '',
-      isDone: map['isDone'] as bool? ?? false,
-      time: map['time'] as String?,
-      completedAt: map['completedAt'] != null
-          ? DateTime.parse(map['completedAt'])
+      title: json['title'] as String? ?? '',
+      isDone: json['isDone'] as bool? ?? false,
+      time: json['time'] as String?,
+      targetMinutes: json['targetMinutes'] as int?,
+      completedAt: json['completedAt'] != null
+          ? DateTime.parse(json['completedAt'] as String)
           : null,
-      createdAt: map['createdAt'] != null
-          ? DateTime.parse(map['createdAt'])
+      createdAt: json['createdAt'] != null
+          ? DateTime.parse(json['createdAt'] as String)
           : DateTime.now(),
     );
   }
-
-  Map<String, dynamic> toJson() => toMap();
-
-  factory Task.fromJson(Map<String, dynamic> json) => Task.fromMap(json);
 }

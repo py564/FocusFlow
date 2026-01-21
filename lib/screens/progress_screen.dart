@@ -6,214 +6,211 @@ class ProgressView extends StatelessWidget {
   final List<Task> tasks;
   final List<Habit> habits;
 
-  const ProgressView({
-    super.key,
-    required this.tasks,
-    required this.habits,
-  });
+  const ProgressView({super.key, required this.tasks, required this.habits});
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final today = DateTime.now();
+    // 1. LOGIC SECTION (Calculated every time the screen builds)
+    final now = DateTime.now();
+    final todayDate = DateTime(now.year, now.month, now.day);
 
-    final todayTasks = tasks.where((task) =>
-        task.createdAt.year == today.year &&
-        task.createdAt.month == today.month &&
-        task.createdAt.day == today.day);
+    // Filter for Today
+    final todaysTasks = tasks.where((t) {
+      final tDate = DateTime(t.createdAt.year, t.createdAt.month, t.createdAt.day);
+      return tDate.isAtSameMomentAs(todayDate);
+    }).toList();
 
-    final completed = todayTasks.where((t) => t.isDone).length;
-    final total = todayTasks.length;
-    final progress = total == 0 ? 0.0 : completed / total;
+    final todayCompleted = todaysTasks.where((t) => t.isDone).length;
+    final todayTotal = todaysTasks.length;
 
-    final hasData = tasks.isNotEmpty || habits.isNotEmpty;
+    // Overall Stats
+    final completedTasks = tasks.where((t) => t.isDone).length;
+    final totalTasks = tasks.length;
+    final taskCompletionRate = totalTasks == 0 ? 0.0 : (completedTasks / totalTasks);
+    final totalHabitStreaks = habits.fold<int>(0, (sum, h) => sum + h.streak);
 
+    // 2. UI SECTION
     return SingleChildScrollView(
-      padding: const EdgeInsets.all(16),
-      child: hasData
-          ? Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                _TaskProgressCard(
-                  completed: completed,
-                  total: total,
-                  progress: progress,
-                ),
-                const SizedBox(height: 28),
-                if (habits.isNotEmpty) ...[
-                  Text(
-                    'Habit Streaks',
-                    style: theme.textTheme.titleMedium
-                        ?.copyWith(fontWeight: FontWeight.w600),
-                  ),
-                  const SizedBox(height: 12),
-                  ...habits.map(_HabitTile.new),
-                ],
-                const SizedBox(height: 32),
-                Center(
-                  child: Text(
-                    'Consistency beats motivation.',
-                    style: theme.textTheme.bodySmall
-                        ?.copyWith(color: Colors.grey.shade600),
-                  ),
-                ),
-              ],
-            )
-          : _EmptyState(),
-    );
-  }
-}
-class _TaskProgressCard extends StatelessWidget {
-  final int completed;
-  final int total;
-  final double progress;
-
-  const _TaskProgressCard({
-    required this.completed,
-    required this.total,
-    required this.progress,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-
-    return Card(
-      elevation: 2,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(16),
-      ),
-      child: Padding(
-        padding: const EdgeInsets.all(18),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              '🎉 Today’s Progress',
-              style: theme.textTheme.titleMedium
-                  ?.copyWith(fontWeight: FontWeight.w600),
-            ),
-            const SizedBox(height: 6),
-            Text(
-              '$completed of $total tasks completed',
-              style: theme.textTheme.headlineSmall
-                  ?.copyWith(fontWeight: FontWeight.bold),
-            ),
-            const SizedBox(height: 16),
-            ClipRRect(
-              borderRadius: BorderRadius.circular(8),
-              child: LinearProgressIndicator(
-                value: progress,
-                minHeight: 10,
-                backgroundColor: Colors.grey.shade200,
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-class _HabitTile extends StatelessWidget {
-  final Habit habit;
-
-  const _HabitTile(this.habit);
-
-  @override
-  Widget build(BuildContext context) {
-    final color = _habitColor(habit.name);
-    final theme = Theme.of(context);
-
-    return Card(
-      margin: const EdgeInsets.only(bottom: 12),
-      elevation: 1.5,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(14),
-      ),
-      child: Padding(
-        padding: const EdgeInsets.all(14),
-        child: Row(
-          children: [
-            CircleAvatar(
-              // ignore: deprecated_member_use
-              backgroundColor: color.withOpacity(0.12),
-              child: Icon(_habitIcon(habit.name), color: color),
-            ),
-            const SizedBox(width: 14),
-            Expanded(
-              child: Text(
-                habit.name,
-                style: theme.textTheme.bodyLarge,
-              ),
-            ),
-            Row(
-              children: [
-                const Icon(Icons.local_fire_department,
-                    color: Colors.orange, size: 18),
-                const SizedBox(width: 4),
-                Text(
-                  '${habit.streak} days',
-                  style: theme.textTheme.bodyMedium,
-                ),
-              ],
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-class _EmptyState extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-
-    return Center(
+      physics: const BouncingScrollPhysics(),
+      padding: const EdgeInsets.symmetric(horizontal: 16),
       child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Icon(Icons.insights_rounded,
-              size: 72, color: Colors.grey.shade400),
+          const SizedBox(height: 20),
+          
+          // NEW: Today's Result Card at the very top
+          _buildTodayResultCard(todayCompleted, todayTotal),
+          
+          const SizedBox(height: 24),
+          _buildHeader("Overview"),
           const SizedBox(height: 16),
-          Text(
-            'No progress yet',
-            style: theme.textTheme.titleMedium
-                ?.copyWith(fontWeight: FontWeight.w600),
+          
+          Row(
+            children: [
+              _buildStatCard("Total Done", "$completedTasks", Icons.assignment_turned_in, const Color(0xFF2E7D32)),
+              const SizedBox(width: 12),
+              _buildStatCard("Streaks", "$totalHabitStreaks", Icons.local_fire_department_rounded, Colors.orange),
+            ],
           ),
+
+          const SizedBox(height: 24),
+          _buildHeader("Last 7 Days Activity"),
+          const SizedBox(height: 16),
+          _buildWeeklyChart(tasks),
+
+          const SizedBox(height: 24),
+          _buildHeader("Focus Efficiency"),
+          const SizedBox(height: 16),
+          _buildEfficiencyCard(taskCompletionRate),
+
+          const SizedBox(height: 24),
+          _buildHeader("Habit Progress"),
+          const SizedBox(height: 16),
+          ...habits.map((habit) => _buildHabitProgressTile(habit)),
+
+          const SizedBox(height: 100), 
+        ],
+      ),
+    );
+  }
+
+  // --- HELPER WIDGETS ---
+
+  Widget _buildTodayResultCard(int completed, int total) {
+    double percent = total == 0 ? 0.0 : completed / total;
+    
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        gradient: const LinearGradient(
+          colors: [Color(0xFF2E7D32), Color(0xFF1B5E20)],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        borderRadius: BorderRadius.circular(24),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text("🎉TODAY'S SCORE", style: TextStyle(color: Colors.white70, fontSize: 12, fontWeight: FontWeight.bold, letterSpacing: 1.2)),
           const SizedBox(height: 8),
-          Text(
-            'Start adding tasks and habits\nto view your progress',
-            textAlign: TextAlign.center,
-            style: theme.textTheme.bodyMedium
-                ?.copyWith(color: Colors.grey.shade600),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text("$completed of $total tasks", style: const TextStyle(color: Colors.white, fontSize: 22, fontWeight: FontWeight.bold)),
+              Text("${(percent * 100).toInt()}%", style: const TextStyle(color: Colors.white, fontSize: 22, fontWeight: FontWeight.w900)),
+            ],
+          ),
+          const SizedBox(height: 16),
+          ClipRRect(
+            borderRadius: BorderRadius.circular(10),
+            child: LinearProgressIndicator(
+              value: percent,
+              minHeight: 8,
+              backgroundColor: Colors.white24,
+              valueColor: const AlwaysStoppedAnimation<Color>(Colors.white),
+            ),
           ),
         ],
       ),
     );
   }
-}
-Color _habitColor(String name) {
-  switch (name.toLowerCase()) {
-    case 'drink water':
-      return Colors.blue;
-    case 'study':
-      return Colors.indigo;
-    case 'exercise':
-      return Colors.orange;
-    default:
-      return Colors.green;
-  }
-}
 
-IconData _habitIcon(String name) {
-  switch (name.toLowerCase()) {
-    case 'drink water':
-      return Icons.water_drop;
-    case 'study':
-      return Icons.menu_book;
-    case 'exercise':
-      return Icons.local_fire_department;
-    default:
-      return Icons.emoji_events;
+  Widget _buildHeader(String title) {
+    return Text(title, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Color(0xFF1F2937)));
+  }
+
+  Widget _buildStatCard(String title, String value, IconData icon, Color color) {
+    return Expanded(
+      child: Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(20)),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Icon(icon, color: color, size: 24),
+            const SizedBox(height: 8),
+            Text(value, style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
+            Text(title, style: TextStyle(color: Colors.grey.shade600, fontSize: 12)),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildWeeklyChart(List<Task> allTasks) {
+    final now = DateTime.now();
+    final last7Days = List.generate(7, (i) => DateTime(now.year, now.month, now.day).subtract(Duration(days: 6 - i)));
+
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(24)),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        crossAxisAlignment: CrossAxisAlignment.end,
+        children: last7Days.map((date) {
+          final dayTasks = allTasks.where((t) => 
+            t.createdAt.year == date.year && t.createdAt.month == date.month && t.createdAt.day == date.day
+          ).toList();
+          final doneCount = dayTasks.where((t) => t.isDone).length;
+          double barHeight = dayTasks.isEmpty ? 4 : (doneCount / dayTasks.length) * 80;
+
+          return Column(
+            children: [
+              Container(
+                width: 12, height: 80,
+                decoration: BoxDecoration(color: Colors.grey.shade100, borderRadius: BorderRadius.circular(10)),
+                alignment: Alignment.bottomCenter,
+                child: AnimatedContainer(
+                  duration: const Duration(milliseconds: 500),
+                  width: 12, height: barHeight,
+                  decoration: BoxDecoration(color: const Color(0xFF2E7D32), borderRadius: BorderRadius.circular(10)),
+                ),
+              ),
+              const SizedBox(height: 8),
+              Text(['M','T','W','T','F','S','S'][date.weekday-1], style: const TextStyle(fontSize: 10, fontWeight: FontWeight.bold)),
+            ],
+          );
+        }).toList(),
+      ),
+    );
+  }
+
+  Widget _buildEfficiencyCard(double rate) {
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(color: const Color(0xFF1F2937), borderRadius: BorderRadius.circular(24)),
+      child: Row(
+        children: [
+          Stack(
+            alignment: Alignment.center,
+            children: [
+              SizedBox(width: 50, height: 50, child: CircularProgressIndicator(value: rate, strokeWidth: 5, backgroundColor: Colors.white10, color: const Color(0xFF2E7D32))),
+              Text("${(rate * 100).toInt()}%", style: const TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold)),
+            ],
+          ),
+          const SizedBox(width: 16),
+          const Expanded(child: Text("Focus Score\nGreat consistency!", style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold))),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildHabitProgressTile(Habit habit) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 12),
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(16)),
+      child: Row(
+        children: [
+          const Icon(Icons.bolt, color: Color(0xFF2E7D32)),
+          const SizedBox(width: 12),
+          Text(habit.name, style: const TextStyle(fontWeight: FontWeight.bold)),
+          const Spacer(),
+          Text("${habit.streak}d streak", style: const TextStyle(color: Colors.orange, fontWeight: FontWeight.bold, fontSize: 12)),
+        ],
+      ),
+    );
   }
 }
